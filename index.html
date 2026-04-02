@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Rishi Trend Screener (Stable FINAL VERSION)</title>
+<title>Rishi Trend Screener (FINAL WORKING)</title>
 
 <style>
 body{background:#0f1117;color:#e8eaf0;font-family:sans-serif;padding:20px}
@@ -16,7 +16,7 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 
 <body>
 
-<h2>📈 Rishi Trend Screener (Stable FINAL VERSION)</h2>
+<h2>📈 Rishi Trend Screener (FINAL WORKING)</h2>
 <button onclick="startLoad()">Load Data</button>
 <div id="status" style="margin-top:10px;color:#aaa"></div>
 
@@ -70,16 +70,13 @@ function parseCSV(text){
   return out.reverse();
 }
 
-// -------- FETCH FROM CDN (NO CORS ISSUE) --------
+// -------- FETCH (WORKING SOURCE) --------
 async function fetchData(sym,freq){
 
+  const url = `https://textise.net/showtext.aspx?strURL=https://stooq.com/q/d/l/?s=${sym.toLowerCase()}.us&i=${freq}`;
+
   try{
-    const url = `https://cdn.jsdelivr.net/gh/datasets/stooq@master/data/${freq}/${sym.toLowerCase()}.us.csv`;
-
     const res = await fetch(url);
-
-    if(!res.ok) return null;
-
     const txt = await res.text();
 
     if(!txt || txt.length < 50) return null;
@@ -87,7 +84,7 @@ async function fetchData(sym,freq){
     return parseCSV(txt);
 
   }catch(e){
-    console.log("❌ error:", sym);
+    console.log("Error:", sym);
     return null;
   }
 }
@@ -95,10 +92,10 @@ async function fetchData(sym,freq){
 // -------- STOCK --------
 async function fetchStock(sym){
 
-  const weekly = await fetchData(sym,'weekly');
+  const weekly = await fetchData(sym,'w');
   if(!weekly) return null;
 
-  const daily = await fetchData(sym,'daily');
+  const daily = await fetchData(sym,'d');
 
   const price = weekly[weekly.length-1];
 
@@ -144,12 +141,12 @@ async function startLoad(){
       allData.push(d);
     }
 
-    await new Promise(r=>setTimeout(r,100));
+    await new Promise(r=>setTimeout(r,200));
   }
 
   if(allData.length === 0){
     document.getElementById('status').innerText =
-      "❌ No data loaded";
+      "❌ No data loaded (network blocked)";
     return;
   }
 
