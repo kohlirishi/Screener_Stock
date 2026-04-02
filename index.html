@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Rishi Trend Screener (Cloudflare)</title>
+<title>Rishi Trend Screener (Stable FINAL)</title>
 
 <style>
 body{background:#0f1117;color:#e8eaf0;font-family:sans-serif;padding:20px}
@@ -16,7 +16,7 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 
 <body>
 
-<h2>📈 Rishi Trend Screener (Cloudflare Stable)</h2>
+<h2>📈 Rishi Trend Screener (FINAL Stable)</h2>
 <button onclick="startLoad()">Load Data</button>
 <div id="status" style="margin-top:10px;color:#aaa"></div>
 
@@ -35,8 +35,6 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 </table>
 
 <script>
-
-const WORKER_URL = "https://polished-truth-5188.photos-kohli-2021.workers.dev/";
 
 const UNIVERSE = ['AVGO','COST','WMT','JPM'];
 
@@ -72,22 +70,24 @@ function parseCSV(text){
   return out.reverse();
 }
 
-// -------- FETCH VIA CLOUDFLARE --------
-async function fetchStooq(sym,freq){
+// -------- FETCH FROM CDN (NO CORS ISSUE) --------
+async function fetchData(sym,freq){
 
   try{
-    const res = await fetch(`${WORKER_URL}?symbol=${sym}&interval=${freq}`);
+    const url = `https://cdn.jsdelivr.net/gh/datasets/stooq@master/data/${freq}/${sym.toLowerCase()}.us.csv`;
+
+    const res = await fetch(url);
 
     if(!res.ok) return null;
 
     const txt = await res.text();
 
-    if(txt.includes("No data") || txt.length < 50) return null;
+    if(!txt || txt.length < 50) return null;
 
     return parseCSV(txt);
 
   }catch(e){
-    console.log("❌ Fetch error:", sym, freq);
+    console.log("❌ error:", sym);
     return null;
   }
 }
@@ -95,10 +95,10 @@ async function fetchStooq(sym,freq){
 // -------- STOCK --------
 async function fetchStock(sym){
 
-  const weekly = await fetchStooq(sym,'w');
+  const weekly = await fetchData(sym,'weekly');
   if(!weekly) return null;
 
-  const daily = await fetchStooq(sym,'d');
+  const daily = await fetchData(sym,'daily');
 
   const price = weekly[weekly.length-1];
 
@@ -109,12 +109,11 @@ async function fetchStock(sym){
   return {sym,price,ema50,sma50w,sma200w};
 }
 
-// -------- FILTER (TradingView-like) --------
+// -------- FILTER --------
 function pass(d){
 
   if(!d.price) return false;
 
-  // Slight tolerance like TradingView
   if(d.ema50 && d.price < d.ema50 * 0.97) return false;
 
   if(d.sma200w && d.price < d.sma200w * 0.90) return false;
@@ -143,16 +142,14 @@ async function startLoad(){
 
     if(d){
       allData.push(d);
-    } else {
-      console.log("⚠️ Skipped:", sym);
     }
 
-    await new Promise(r=>setTimeout(r,200));
+    await new Promise(r=>setTimeout(r,100));
   }
 
   if(allData.length === 0){
     document.getElementById('status').innerText =
-      "❌ No data loaded (check worker URL)";
+      "❌ No data loaded";
     return;
   }
 
