@@ -423,24 +423,38 @@
 <script>
 const UNIVERSE = ['AAPL','MSFT','NVDA','AMZN','META','TSLA','GOOGL','AVGO','COST','WMT','JPM','UNH','V','XOM','MA','HD','PG','JNJ','BAC','ABBV','NFLX','KO','MRK','CVX','CRM','PEP','TMO','LLY','AMD','ORCL','CSCO','ACN','MCD','ABT','DHR','WFC','TXN','ADBE','QCOM','GE','CAT','AMGN','INTU','IBM','GS','SPGI','ISRG','BKNG','HON','C','AXP','NEE','RTX','LOW','VRTX','UPS','TJX','CB','MMC','ETN','BSX','SYK','ADI','PANW','AMAT','SBUX','GILD','LRCX','MO','CI','ELV','CME','REGN','PGR','SO','DUK','BMY','KLAC','SNPS','CDNS','NKE','ITW','APD','SHW','CRWD','ORLY','MAR','AON','CTAS','PAYX','MCHP','NXPI','FTNT','ZTS','PCAR','FAST','ROST','DXCM','IDXX','MRVL'];
 
-let allData=[], sortKey='cap', sortDir=-1, FMP_KEY='';
+let allData=[];
+let FMP_KEY='fXcZLjc4zGaidYeg8qJyXBOumPdZUpe6';
 
-function calcEMA(arr,p){const v=arr.filter(x=>x!=null);if(v.length<p)return null;const k=2/(p+1);let e=v.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=p;i<v.length;i++)e=v[i]*k+e*(1-k);return e;}
-function calcSMA(arr,p){const v=arr.filter(x=>x!=null);if(v.length<p)return null;return v.slice(-p).reduce((a,b)=>a+b,0)/p;}
+// ------------------ CALCULATIONS ------------------
+function calcEMA(arr,p){
+  const v=arr.filter(x=>x!=null);
+  if(v.length<p) return null;
+  const k=2/(p+1);
+  let e=v.slice(0,p).reduce((a,b)=>a+b,0)/p;
+  for(let i=p;i<v.length;i++) e=v[i]*k+e*(1-k);
+  return e;
+}
+
+function calcSMA(arr,p){
+  const v=arr.filter(x=>x!=null);
+  if(v.length<p) return null;
+  return v.slice(-p).reduce((a,b)=>a+b,0)/p;
+}
 
 function parseCSV(text){
   const lines=text.trim().split('\n');
   const rows=[];
   for(let i=1;i<lines.length;i++){
     const c=lines[i].split(',');
-    if(c.length>=5&&c[4]){
+    if(c.length>=5 && c[4]){
       rows.push({close:+c[4],low:+c[3]});
     }
   }
   return rows.reverse();
 }
 
-// ✅ FIXED STOOQ
+// ------------------ DATA FETCH ------------------
 async function fetchStooq(sym,freq){
   const tries=[`${sym.toLowerCase()}.us`, sym.toLowerCase()];
   for(const t of tries){
@@ -456,7 +470,6 @@ async function fetchStooq(sym,freq){
 }
 
 async function fetchFMP(sym){
-  if(!FMP_KEY) return null;
   try{
     const r=await fetch(`https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`);
     const d=await r.json();
@@ -470,7 +483,6 @@ async function fetchFMP(sym){
     return {
       name:q.name,
       price:q.price,
-      chg:q.changesPercentage,
       cap:q.marketCap,
       pe:q.pe,
       roe:m?.roeTTM ? m.roeTTM*100 : null
@@ -486,7 +498,6 @@ async function fetchStock(sym){
   const price=wClose[wClose.length-1];
 
   const sma200w=calcSMA(wClose,200);
-  const sma50w=calcSMA(wClose,50);
 
   const daily=await fetchStooq(sym,'d');
   const dClose=daily?daily.map(r=>r.close):[];
@@ -498,30 +509,27 @@ async function fetchStock(sym){
     sym,
     name:fmp?.name||sym,
     price:fmp?.price||price,
-    chg:fmp?.chg||0,
     cap:fmp?.cap||null,
     pe:fmp?.pe||null,
     roe:fmp?.roe||null,
     ema50d,
-    sma200w,
-    sma50w,
-    _done:true
+    sma200w
   };
 }
 
-// ✅ SIMPLIFIED FILTER (TradingView-like)
+// ------------------ FILTER ------------------
 function whyFail(d){
-  if(!d.price) return 'no price';
+  if(!d.price) return 'No Price';
 
-  if(d.ema50d && d.price < d.ema50d) return 'Below EMA50D';
+  if(!d.ema50d || d.price < d.ema50d) return 'Below EMA50D';
 
-  if(d.cap && d.cap < 100e9) return 'Cap <100B';
+  if(!d.cap || d.cap < 100e9) return 'Cap <100B';
 
-  if(d.pe && (d.pe <= 0 || d.pe > 60)) return 'PE out';
+  if(!d.pe || d.pe <= 0 || d.pe > 60) return 'PE out';
 
-  if(d.roe && d.roe < 10) return 'ROE <10';
+  if(!d.roe || d.roe < 10) return 'ROE <10';
 
-  if(d.sma200w && d.price < d.sma200w) return 'Below 200W';
+  if(!d.sma200w || d.price < d.sma200w) return 'Below 200W';
 
   return null;
 }
@@ -530,16 +538,19 @@ function passFilters(d){
   return whyFail(d) === null;
 }
 
+// ------------------ LOAD (FAST) ------------------
 async function startLoad(){
-  allData=[];
-  for(const sym of UNIVERSE){
-    const d=await fetchStock(sym);
-    if(d) allData.push(d);
-  }
+  document.getElementById('tblBody').innerHTML = "Loading...";
+
+  const results = await Promise.all(
+    UNIVERSE.map(sym => fetchStock(sym))
+  );
+
+  allData = results.filter(x => x);
   applyFilters();
 }
 
-// ✅ FIXED SHOW ALL
+// ------------------ RENDER ------------------
 function applyFilters(){
   const showAll=document.getElementById('showAllToggle').checked;
 
@@ -562,8 +573,11 @@ function applyFilters(){
       <td>${why || '✅ PASS'}</td>
     </tr>`;
   }).join('');
+
+  document.getElementById('mainTable').style.display = 'table';
 }
 
+// ------------------ INIT ------------------
 window.onload=startLoad;
 </script>
 </body>
