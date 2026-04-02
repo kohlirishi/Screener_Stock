@@ -2,26 +2,53 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Rishi Screener FINAL (Working)</title>
+<title>Rishi Screener FINAL</title>
+
 <style>
-body{background:#0f1117;color:#fff;font-family:sans-serif;padding:20px}
-button{padding:10px;background:#22c55e;border:none;border-radius:6px}
+body{
+  background:#0f1117;
+  color:#e8eaf0;
+  font-family:sans-serif;
+  padding:20px
+}
+button{
+  padding:10px 20px;
+  background:#22c55e;
+  border:none;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer
+}
+table{
+  width:100%;
+  margin-top:20px;
+  border-collapse:collapse
+}
+td,th{
+  padding:10px;
+  border-bottom:1px solid #333;
+  text-align:left
+}
 .pass{color:#22c55e}
 .fail{color:#ef4444}
 </style>
+
 </head>
 
 <body>
 
 <h2>📈 Rishi Screener (FINAL STABLE)</h2>
+
 <button onclick="startLoad()">Load Data</button>
-<div id="status"></div>
+
+<div id="status" style="margin-top:10px;color:#aaa"></div>
 
 <table id="tbl" style="display:none">
 <thead>
 <tr>
 <th>Symbol</th>
 <th>Price</th>
+<th>SMA 200</th>
 <th>Status</th>
 </tr>
 </thead>
@@ -33,54 +60,106 @@ button{padding:10px;background:#22c55e;border:none;border-radius:6px}
 const WORKER = "https://polished-truth-5188.photos-kohli-2021.workers.dev/";
 const UNIVERSE = ['AVGO','COST','WMT','JPM'];
 
+let allData = [];
+
+// -------- SMA --------
 function calcSMA(arr,p){
   if(arr.length<p) return null;
   return arr.slice(-p).reduce((a,b)=>a+b,0)/p;
 }
 
+// -------- FETCH STOCK --------
 async function fetchStock(sym){
 
-  const res = await fetch(`${WORKER}?symbol=${sym}`);
-  const data = await res.json();
+  try{
+    const res = await fetch(`${WORKER}?symbol=${sym}`);
 
-  if(!data.historical) return null;
+    if(!res.ok){
+      console.log("❌ HTTP error:", sym);
+      return null;
+    }
 
-  const prices = data.historical.map(d=>d.close).reverse();
+    const data = await res.json();
 
-  const price = prices[prices.length-1];
-  const sma200 = calcSMA(prices,200);
+    // ✅ IMPORTANT: new API returns array directly
+    if(!Array.isArray(data) || data.length === 0){
+      console.log("❌ No data:", sym);
+      return null;
+    }
 
-  return {sym,price,sma200};
+    const prices = data.map(d => d.close).reverse();
+
+    if(prices.length < 50){
+      console.log("❌ Not enough data:", sym);
+      return null;
+    }
+
+    const price = prices[prices.length-1];
+    const sma200 = calcSMA(prices,200);
+
+    return {sym,price,sma200};
+
+  }catch(e){
+    console.log("❌ Fetch error:", sym);
+    return null;
+  }
 }
 
+// -------- FILTER --------
+// tuned to match TradingView style behavior
 function pass(d){
-  return d.price > d.sma200 * 0.9;
+
+  if(!d.price || !d.sma200) return false;
+
+  // slight buffer (TV doesn't use exact hard cut)
+  return d.price >= d.sma200 * 0.97;
 }
 
+// -------- LOAD --------
 async function startLoad(){
 
+  document.getElementById("body").innerHTML="";
+  document.getElementById("tbl").style.display="none";
+
   let out="";
+  let loaded=0;
 
-  for(const sym of UNIVERSE){
+  for(let i=0;i<UNIVERSE.length;i++){
 
-    document.getElementById("status").innerText = "Loading " + sym;
+    const sym = UNIVERSE[i];
+
+    document.getElementById("status").innerText =
+      `Loading ${i+1}/${UNIVERSE.length} : ${sym}`;
 
     const d = await fetchStock(sym);
 
-    if(!d) continue;
+    if(!d){
+      out += `<tr>
+        <td>${sym}</td>
+        <td>—</td>
+        <td>—</td>
+        <td class="fail">NO DATA</td>
+      </tr>`;
+      continue;
+    }
+
+    loaded++;
 
     const ok = pass(d);
 
     out += `<tr>
-      <td>${sym}</td>
+      <td>${d.sym}</td>
       <td>${d.price.toFixed(2)}</td>
+      <td>${d.sma200?.toFixed(2) || '-'}</td>
       <td class="${ok?'pass':'fail'}">${ok?'PASS':'FAIL'}</td>
     </tr>`;
   }
 
   document.getElementById("body").innerHTML = out;
   document.getElementById("tbl").style.display="table";
-  document.getElementById("status").innerText = "✅ Done";
+
+  document.getElementById("status").innerText =
+    `✅ Loaded ${loaded} stocks`;
 }
 
 </script>
