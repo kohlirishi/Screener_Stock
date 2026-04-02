@@ -401,23 +401,19 @@
       <div id="progSub" class="prog-sub"></div>
     </div>
     <table id="mainTable" style="display:none">
-      <thead><tr>
-        <th onclick="sortBy('sym')">Symbol</th>
-        <th onclick="sortBy('name')">Company</th>
-        <th onclick="sortBy('price')">Price</th>
-        <th onclick="sortBy('chg')">1D Chg%</th>
-        <th onclick="sortBy('cap')">Mkt Cap</th>
-        <th onclick="sortBy('pe')">P/E</th>
-        <th onclick="sortBy('roe')">ROE%</th>
-        <th onclick="sortBy('eps_growth')">EPS Grw%</th>
-        <th onclick="sortBy('perf5y')">5Y Perf%</th>
-        <th>EMA 50D</th>
-        <th>SMA 50W</th>
-        <th>SMA 200W</th>
-        <th>52WLow vs 200W</th>
-        <th>50W vs 200W</th>
-        <th id="whyHead" style="display:none">Why Failed</th>
-      </tr></thead>
+      <thead>
+<tr>
+  <th>Symbol</th>
+  <th>Company</th>
+  <th>Price</th>
+  <th>Mkt Cap</th>
+  <th>P/E</th>
+  <th>ROE%</th>
+  <th>EMA 50D</th>
+  <th>SMA 200W</th>
+  <th>Status</th>
+</tr>
+</thead>
       <tbody id="tblBody"></tbody>
     </table>
     <div class="empty" id="emptyDiv" style="display:none">No stocks passed all filters.</div>
