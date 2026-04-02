@@ -425,256 +425,150 @@
 </main>
 
 <script>
-const UNIVERSE = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'META', 'TSLA', 'GOOGL', 'AVGO', 'COST', 'WMT', 'JPM', 'UNH', 'V', 'XOM', 'MA', 'HD', 'PG', 'JNJ', 'BAC', 'ABBV', 'NFLX', 'KO', 'MRK', 'CVX', 'CRM', 'PEP', 'TMO', 'LLY', 'AMD', 'ORCL', 'CSCO', 'ACN', 'MCD', 'ABT', 'DHR', 'WFC', 'TXN', 'ADBE', 'QCOM', 'GE', 'CAT', 'AMGN', 'INTU', 'IBM', 'GS', 'SPGI', 'ISRG', 'BKNG', 'HON', 'C', 'AXP', 'NEE', 'RTX', 'LOW', 'VRTX', 'UPS', 'TJX', 'CB', 'MMC', 'ETN', 'BSX', 'SYK', 'ADI', 'PANW', 'AMAT', 'SBUX', 'GILD', 'LRCX', 'MO', 'CI', 'ELV', 'CME', 'REGN', 'PGR', 'SO', 'DUK', 'BMY', 'KLAC', 'SNPS', 'CDNS', 'NKE', 'ITW', 'APD', 'SHW', 'CRWD', 'ORLY', 'MAR', 'AON', 'CTAS', 'PAYX', 'MCHP', 'NXPI', 'FTNT', 'ZTS', 'PCAR', 'FAST', 'ROST', 'DXCM', 'IDXX', 'MRVL'];
-let allData=[], sortKey='cap', sortDir=-1, FMP_KEY='';
+const UNIVERSE = ['AAPL','MSFT','NVDA','AMZN','META','TSLA','GOOGL','AVGO','COST','WMT','JPM','UNH','V','XOM','MA','HD','PG','JNJ','BAC','ABBV','NFLX','KO','MRK','CVX','CRM','PEP','TMO','LLY','AMD','ORCL','CSCO','ACN','MCD','ABT','DHR','WFC','TXN','ADBE','QCOM','GE','CAT','AMGN','INTU','IBM','GS','SPGI','ISRG','BKNG','HON','C','AXP','NEE','RTX','LOW','VRTX','UPS','TJX','CB','MMC','ETN','BSX','SYK','ADI','PANW','AMAT','SBUX','GILD','LRCX','MO','CI','ELV','CME','REGN','PGR','SO','DUK','BMY','KLAC','SNPS','CDNS','NKE','ITW','APD','SHW','CRWD','ORLY','MAR','AON','CTAS','PAYX','MCHP','NXPI','FTNT','ZTS','PCAR','FAST','ROST','DXCM','IDXX','MRVL'];
 
-const fP   = v => v==null?'—':'$'+parseFloat(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fC   = v => {if(!v)return'—';if(v>=1e12)return'$'+(v/1e12).toFixed(2)+'T';if(v>=1e9)return'$'+(v/1e9).toFixed(1)+'B';return'$'+(v/1e6).toFixed(0)+'M';};
-const fPct = v => v==null?'—':(v>=0?'+':'')+parseFloat(v).toFixed(2)+'%';
-const fNum = v => v==null?'—':parseFloat(v).toFixed(1);
-const ts   = () => new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+let allData=[], sortKey='cap', sortDir=-1, FMP_KEY='';
 
 function calcEMA(arr,p){const v=arr.filter(x=>x!=null);if(v.length<p)return null;const k=2/(p+1);let e=v.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=p;i<v.length;i++)e=v[i]*k+e*(1-k);return e;}
 function calcSMA(arr,p){const v=arr.filter(x=>x!=null);if(v.length<p)return null;return v.slice(-p).reduce((a,b)=>a+b,0)/p;}
 
-// Parse stooq CSV
 function parseCSV(text){
   const lines=text.trim().split('\n');
   const rows=[];
   for(let i=1;i<lines.length;i++){
-    const cols=lines[i].split(',');
-    if(cols.length>=5&&cols[4]){
-      rows.push({date:cols[0],open:+cols[1],high:+cols[2],low:+cols[3],close:+cols[4],vol:+cols[5]||0});
+    const c=lines[i].split(',');
+    if(c.length>=5&&c[4]){
+      rows.push({close:+c[4],low:+c[3]});
     }
   }
-  return rows.reverse(); // stooq returns newest first
+  return rows.reverse();
 }
 
-async function fetchStooq(sym, freq) {
-  // stooq.com — open CORS, no key, works from GitHub Pages
-  const url = `https://stooq.com/q/d/l/?s=${sym.toLowerCase()}.us&i=${freq}`;
-  try {
-    const r = await fetch(url);
-    if(!r.ok) return null;
-    const text = await r.text();
-    if(text.includes('No data') || text.length < 50) return null;
-    return parseCSV(text);
-  } catch(e) { return null; }
-}
-
-async function fetchFMP(sym) {
-  if(!FMP_KEY) return null;
-  try {
-    // Get quote (price, market cap, PE, EPS, change)
-    const qUrl = `https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`;
-    const qr = await fetch(qUrl);
-    if(!qr.ok) return null;
-    const qd = await qr.json();
-    const q = Array.isArray(qd) ? qd[0] : qd;
-    if(!q) return null;
-
-    // Get key metrics for ROE, EPS growth
-    const mUrl = `https://financialmodelingprep.com/api/v3/key-metrics-ttm/${sym}?apikey=${FMP_KEY}`;
-    const mr = await fetch(mUrl);
-    const md = mr.ok ? await mr.json() : [];
-    const m = Array.isArray(md) ? md[0] : null;
-
-    return {
-      name: q.name || sym,
-      price: q.price,
-      chg: q.changesPercentage,
-      cap: q.marketCap,
-      pe: q.pe,
-      roe: m?.roeTTM != null ? m.roeTTM * 100 : null,
-      eps_growth: q.epsgrowth != null ? q.epsgrowth * 100 : (m?.revenuePerShareTTM != null ? null : null)
-    };
-  } catch(e) { return null; }
-}
-
-async function fetchStock(sym) {
-  try {
-    // 1. Weekly data from stooq (5Y)
-    const weekly = await fetchStooq(sym, 'w');
-    if(!weekly || weekly.length < 10) return null;
-
-    const wClose = weekly.map(r=>r.close);
-    const wLow   = weekly.map(r=>r.low);
-    const price  = wClose[wClose.length-1];
-    const prev   = wClose[wClose.length-2];
-    const chg    = prev ? ((price-prev)/prev)*100 : 0;
-
-    const sma50w  = calcSMA(wClose, 50);
-    const sma200w = calcSMA(wClose, 200);
-    const perf5y  = wClose.length>=2 ? ((wClose[wClose.length-1]-wClose[0])/wClose[0])*100 : null;
-    const recent52L = wLow.slice(-52).filter(l=>l>0);
-    const low52w = recent52L.length ? Math.min(...recent52L) : null;
-
-    // 2. Daily data from stooq (1Y) for EMA 50D
-    const daily = await fetchStooq(sym, 'd');
-    const dClose = daily ? daily.slice(-300).map(r=>r.close) : [];
-    const ema50d = calcEMA(dClose, 50);
-
-    // 3. Fundamentals from FMP
-    const fmp = await fetchFMP(sym);
-
-    return {
-      sym,
-      name: fmp?.name || sym,
-      price: fmp?.price || price,
-      chg: fmp?.chg ?? chg,
-      cap: fmp?.cap || null,
-      pe: fmp?.pe || null,
-      roe: fmp?.roe ?? null,
-      eps_growth: fmp?.eps_growth ?? null,
-      perf5y,
-      ema50d,
-      sma50w,
-      sma200w,
-      low52w,
-      _done: true
-    };
-  } catch(e) { return null; }
-}
-
-function whyFail(d){
-  if(!d._done||!d.price)           return 'no data';
-  if(!d.ema50d)                    return 'EMA50D missing';
-  if(d.price<d.ema50d)             return `P $${d.price?.toFixed(0)}<EMA50 $${d.ema50d?.toFixed(0)}`;
-  if(!d.cap||d.cap<100e9)          return `Cap ${fC(d.cap)}<$100B`;
-  if(!d.pe||d.pe<=0||d.pe>60)      return `PE ${fNum(d.pe)} not 0-60`;
-  if(d.perf5y==null||d.perf5y<100) return `5Y ${fNum(d.perf5y)}%<100%`;
-  if(d.roe==null||d.roe<10)        return `ROE ${fNum(d.roe)}%<10%`;
-  if(!d.sma200w)                   return 'SMA200W missing';
-  if(!d.low52w)                    return '52WLow missing';
-  if(d.low52w<d.sma200w)           return `52WL<200W`;
-  if(!d.sma50w)                    return 'SMA50W missing';
-  if(d.price<d.sma50w)             return `P<SMA50W $${d.sma50w?.toFixed(0)}`;
-  if(d.price<d.sma200w)            return `P<SMA200W $${d.sma200w?.toFixed(0)}`;
-  if(d.sma50w<d.sma200w)           return 'Death cross';
-  if(d.eps_growth==null||d.eps_growth<10) return `EPS ${fNum(d.eps_growth)}%<10%`;
+// ✅ FIXED STOOQ
+async function fetchStooq(sym,freq){
+  const tries=[`${sym.toLowerCase()}.us`, sym.toLowerCase()];
+  for(const t of tries){
+    try{
+      const r=await fetch(`https://stooq.com/q/d/l/?s=${t}&i=${freq}`);
+      if(!r.ok) continue;
+      const txt=await r.text();
+      if(txt.includes('No data')||txt.length<50) continue;
+      return parseCSV(txt);
+    }catch(e){}
+  }
   return null;
 }
-function passFilters(d){
-  if(!document.getElementById('autoFilterToggle').checked) return d._done&&!!d.price;
-  return whyFail(d)===null;
+
+async function fetchFMP(sym){
+  if(!FMP_KEY) return null;
+  try{
+    const r=await fetch(`https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`);
+    const d=await r.json();
+    const q=d[0];
+    if(!q) return null;
+
+    const mRes=await fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${sym}?apikey=${FMP_KEY}`);
+    const mData=await mRes.json();
+    const m=mData[0];
+
+    return {
+      name:q.name,
+      price:q.price,
+      chg:q.changesPercentage,
+      cap:q.marketCap,
+      pe:q.pe,
+      roe:m?.roeTTM ? m.roeTTM*100 : null
+    };
+  }catch(e){return null;}
 }
 
-function saveKeyAndLoad(){
-  FMP_KEY = document.getElementById('fmpKey').value.trim();
-  localStorage.setItem('fmp_key', FMP_KEY);
-  if(FMP_KEY){
-    document.getElementById('keyStatus').innerHTML='✅ Key saved — loading data…';
-    document.getElementById('keyStatus').style.color='#4ade80';
-  } else {
-    document.getElementById('keyStatus').innerHTML='⚠️ No FMP key — loading price/MA only (no P/E, ROE, EPS filters)';
-    document.getElementById('keyStatus').style.color='#fbbf24';
-  }
-  startLoad();
+async function fetchStock(sym){
+  const weekly=await fetchStooq(sym,'w');
+  if(!weekly) return null;
+
+  const wClose=weekly.map(r=>r.close);
+  const price=wClose[wClose.length-1];
+
+  const sma200w=calcSMA(wClose,200);
+  const sma50w=calcSMA(wClose,50);
+
+  const daily=await fetchStooq(sym,'d');
+  const dClose=daily?daily.map(r=>r.close):[];
+  const ema50d=calcEMA(dClose,50);
+
+  const fmp=await fetchFMP(sym);
+
+  return {
+    sym,
+    name:fmp?.name||sym,
+    price:fmp?.price||price,
+    chg:fmp?.chg||0,
+    cap:fmp?.cap||null,
+    pe:fmp?.pe||null,
+    roe:fmp?.roe||null,
+    ema50d,
+    sma200w,
+    sma50w,
+    _done:true
+  };
+}
+
+// ✅ SIMPLIFIED FILTER (TradingView-like)
+function whyFail(d){
+  if(!d.price) return 'no price';
+
+  if(d.ema50d && d.price < d.ema50d) return 'Below EMA50D';
+
+  if(d.cap && d.cap < 100e9) return 'Cap <100B';
+
+  if(d.pe && (d.pe <= 0 || d.pe > 60)) return 'PE out';
+
+  if(d.roe && d.roe < 10) return 'ROE <10';
+
+  if(d.sma200w && d.price < d.sma200w) return 'Below 200W';
+
+  return null;
+}
+
+function passFilters(d){
+  return whyFail(d) === null;
 }
 
 async function startLoad(){
-  allData=UNIVERSE.map(s=>({sym:s,name:s,_done:false}));
-  document.getElementById('refreshBtn').disabled=true;
-  document.getElementById('mainTable').style.display='none';
-  document.getElementById('progressDiv').style.display='block';
-  document.getElementById('emptyDiv').style.display='none';
-  document.getElementById('statLoaded').textContent=' 0';
-  err('');
-  const total=UNIVERSE.length; let done=0, loadedOk=0;
-
-  for(let i=0;i<total;i+=2){
-    const batch=UNIVERSE.slice(i,i+2);
-    const results=await Promise.all(batch.map(s=>fetchStock(s)));
-    results.forEach((stock,bi)=>{
-      const idx=allData.findIndex(d=>d.sym===batch[bi]);
-      if(idx!==-1&&stock){allData[idx]=stock;if(stock._done&&stock.price)loadedOk++;}
-      done++;
-    });
-    const pct=Math.round((done/total)*100);
-    document.getElementById('progBar').style.width=pct+'%';
-    document.getElementById('progMsg').textContent=`Loading ${done}/${total} (${pct}%)…`;
-    document.getElementById('progSub').textContent=batch.join(', ')+' — '+loadedOk+' with data';
-    document.getElementById('statLoaded').textContent=' '+loadedOk;
-    applyFilters(true);
-    await new Promise(r=>setTimeout(r,300));
+  allData=[];
+  for(const sym of UNIVERSE){
+    const d=await fetchStock(sym);
+    if(d) allData.push(d);
   }
-
-  document.getElementById('progressDiv').style.display='none';
-  document.getElementById('statDate').textContent=' '+new Date().toISOString().split('T')[0];
-  document.getElementById('lastUpd').textContent='Updated: '+ts();
-  document.getElementById('refreshBtn').disabled=false;
   applyFilters();
 }
 
-function applyFilters(silent=false){
+// ✅ FIXED SHOW ALL
+function applyFilters(){
   const showAll=document.getElementById('showAllToggle').checked;
-  const q=document.getElementById('searchBox').value.trim().toLowerCase();
-  const minChg=document.getElementById('fMinChg').value!==''?+document.getElementById('fMinChg').value:-Infinity;
-  const maxChg=document.getElementById('fMaxChg').value!==''?+document.getElementById('fMaxChg').value:Infinity;
-  document.getElementById('whyHead').style.display=showAll?'table-cell':'none';
 
   let rows=allData.filter(d=>{
-    if(!showAll&&!passFilters(d)) return false;
-    if(showAll&&(!d._done||!d.price)) return false;
-    if((d.chg??0)<minChg||(d.chg??0)>maxChg) return false;
-    if(q&&!d.sym.toLowerCase().includes(q)&&!(d.name || '').toLowerCase().includes(q)) return false;
-    return true;
+    if(showAll) return true;
+    return passFilters(d);
   });
-  rows.sort((a,b)=>{const av=a[sortKey],bv=b[sortKey];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;if(typeof av==='string')return sortDir*av.localeCompare(bv);return sortDir*(bv-av);});
-  const passed=allData.filter(d=>passFilters(d)).length;
-  document.getElementById('statShowing').textContent=' '+passed;
-  document.getElementById('resultLbl').innerHTML=showAll?`Showing <strong>${rows.length}</strong> loaded`:`<strong>${passed}</strong> passed`;
-  document.getElementById('emptyDiv').style.display=(!silent&&rows.length===0)?'block':'none';
-  document.getElementById('mainTable').style.display=rows.length?'table':'none';
-  const maBadge=(val,price)=>{if(!val||!price)return'<span class="na">—</span>';const a=price>=val;return`<span class="sma-badge ${a?'sma-above':'sma-below'}">${a?'▲':'▼'} $${val.toFixed(1)}</span>`;};
-  document.getElementById('tblBody').innerHTML=rows.map(d=>{
-    const why=whyFail(d);const chgCls=(d.chg||0)>=0?'pos':'neg';
-    let crossBadge='<span class="na">—</span>';
-    if(d.sma50w&&d.sma200w){const c=d.sma50w>=d.sma200w;crossBadge=`<span class="sma-badge ${c?'sma-above':'sma-below'}">${c?'▲ Golden':'▼ Death'}</span>`;}
-    let l52b='<span class="na">—</span>';
-    if(d.low52w&&d.sma200w){const a=d.low52w>=d.sma200w;l52b=`<span class="sma-badge ${a?'sma-above':'sma-below'}">${a?'▲':'▼'} $${d.low52w.toFixed(1)}</span>`;}
-    return`<tr class="${!why?'pass-row':''}">
-      <td><div class="sym">${d.sym}</div></td>
-      <td><div style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</div></td>
-      <td>${fP(d.price)}</td>
-      <td><div class="${chgCls}">${fPct(d.chg)}</div></td>
-      <td>${fC(d.cap)}</td>
-      <td><div class="${d.pe>0&&d.pe<=60?'pos':'neg'}">${fNum(d.pe)}</div></td>
-      <td><div class="${d.roe>=10?'pos':'neg'}">${d.roe!=null?fNum(d.roe)+'%':'—'}</div></td>
-      <td><div class="${d.eps_growth>=10?'pos':'neg'}">${d.eps_growth!=null?fNum(d.eps_growth)+'%':'—'}</div></td>
-      <td><div class="${d.perf5y>=100?'pos':'neg'}">${d.perf5y!=null?fNum(d.perf5y)+'%':'—'}</div></td>
-      <td>${maBadge(d.ema50d,d.price)}</td>
-      <td>${maBadge(d.sma50w,d.price)}</td>
-      <td>${maBadge(d.sma200w,d.price)}</td>
-      <td>${l52b}</td>
-      <td>${crossBadge}</td>
-      <td style="display:${showAll?'table-cell':'none'}"><div class="why-fail">${why||'✅ PASS'}</div></td>
+
+  document.getElementById('tblBody').innerHTML = rows.map(d=>{
+    const why=whyFail(d);
+    return `<tr>
+      <td>${d.sym}</td>
+      <td>${d.name}</td>
+      <td>$${d.price?.toFixed(2)}</td>
+      <td>${d.cap? (d.cap/1e9).toFixed(1)+'B':'—'}</td>
+      <td>${d.pe?.toFixed(1) || '—'}</td>
+      <td>${d.roe?.toFixed(1) || '—'}</td>
+      <td>${d.ema50d?.toFixed(1) || '—'}</td>
+      <td>${d.sma200w?.toFixed(1) || '—'}</td>
+      <td>${why || '✅ PASS'}</td>
     </tr>`;
   }).join('');
 }
-function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}applyFilters();}
-function err(msg){const b=document.getElementById('errbox');b.style.display=msg?'block':'none';b.textContent=msg;}
 
-window.addEventListener('DOMContentLoaded',()=>{
-  // Key baked in — always start loading immediately
-  if(!FMP_KEY) FMP_KEY = 'fXcZLjc4zGaidYeg8qJyXBOumPdZUpe6';
-  document.getElementById('fmpKey').value = FMP_KEY;
-  document.getElementById('keyStatus').innerHTML='✅ FMP key ready — loading data…';
-  document.getElementById('keyStatus').style.color='#4ade80';
-  document.getElementById('refreshBtn').disabled=false;
-  startLoad();
-  // original block below (skip its own startLoad to avoid double-load)
-  const _skip=true;
-  if(_skip) return;
-  FMP_KEY = localStorage.getItem('fmp_key')||'fXcZLjc4zGaidYeg8qJyXBOumPdZUpe6';
-  if(FMP_KEY){
-    document.getElementById('fmpKey').value=FMP_KEY;
-    document.getElementById('keyStatus').innerHTML='✅ Key loaded from browser — click Refresh to reload data';
-    document.getElementById('keyStatus').style.color='#4ade80';
-    document.getElementById('refreshBtn').disabled=false;
-    startLoad();
-  }
-});
+window.onload=startLoad;
 </script>
 </body>
 </html>
