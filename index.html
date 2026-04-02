@@ -16,7 +16,7 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 
 <body>
 
-<h2>📈 Rishi Trend Screener (TV-style)</h2>
+<h2>📈 Rishi Trend Screener (Aligned with TradingView)</h2>
 <button onclick="startLoad()">Load Data</button>
 <div id="status" style="margin-top:10px;color:#aaa"></div>
 
@@ -116,19 +116,21 @@ async function fetchStock(sym){
   return {sym,price,ema50,sma50w,sma200w};
 }
 
-// -------- FILTER (TV STYLE) --------
+// -------- FILTER (RELAXED TV STYLE) --------
 function pass(d){
 
   if(!d.price) return false;
 
-  // 1. Price > EMA50 (daily)
-  if(d.ema50 && d.price < d.ema50) return false;
+  // 1. Price > EMA50 (allow small buffer)
+  if(d.ema50 && d.price < d.ema50 * 0.97) return false;
 
-  // 2. TREND: SMA50W > SMA200W (core TV logic)
-  if(d.sma50w && d.sma200w && d.sma50w < d.sma200w) return false;
+  // 2. Allow slight weakness around 200W (IMPORTANT)
+  if(d.sma200w && d.price < d.sma200w * 0.90) return false;
 
-  // 3. BUFFER around SMA200W (very important)
-  if(d.sma200w && d.price < d.sma200w * 0.95) return false;
+  // 3. DO NOT strictly enforce SMA50W > SMA200W
+  // just ensure it's not massively bearish
+  if(d.sma50w && d.sma200w && d.sma50w < d.sma200w * 0.90)
+    return false;
 
   return true;
 }
@@ -151,7 +153,7 @@ async function startLoad(){
 
     if(d) allData.push(d);
 
-    await new Promise(r=>setTimeout(r,120)); // prevent blocking
+    await new Promise(r=>setTimeout(r,120));
   }
 
   render();
