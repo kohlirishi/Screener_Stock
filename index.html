@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Rishi Trend Screener</title>
+
 <style>
 body{background:#0f1117;color:#e8eaf0;font-family:sans-serif;padding:20px}
 button{padding:10px 20px;background:#22c55e;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
@@ -12,10 +13,10 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 .fail{color:#ef4444}
 </style>
 </head>
+
 <body>
 
-<h2>📈 Rishi Trend Screener (S&P 100)</h2>
-
+<h2>📈 Rishi Trend Screener (TV-style)</h2>
 <button onclick="startLoad()">Load Data</button>
 <div id="status" style="margin-top:10px;color:#aaa"></div>
 
@@ -25,6 +26,7 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 <th>Symbol</th>
 <th>Price</th>
 <th>EMA 50D</th>
+<th>SMA 50W</th>
 <th>SMA 200W</th>
 <th>Status</th>
 </tr>
@@ -38,7 +40,7 @@ const UNIVERSE = ['AAPL','MSFT','NVDA','AMZN','META','TSLA','GOOGL','AVGO','COST
 
 let allData=[];
 
-// ---------------- EMA ----------------
+// -------- EMA --------
 function calcEMA(arr,p){
   if(arr.length<p) return null;
   const k=2/(p+1);
@@ -49,13 +51,13 @@ function calcEMA(arr,p){
   return ema;
 }
 
-// ---------------- SMA ----------------
+// -------- SMA --------
 function calcSMA(arr,p){
   if(arr.length<p) return null;
   return arr.slice(-p).reduce((a,b)=>a+b,0)/p;
 }
 
-// ---------------- CSV ----------------
+// -------- CSV --------
 function parseCSV(text){
   const lines=text.trim().split('\n');
   const out=[];
@@ -68,7 +70,7 @@ function parseCSV(text){
   return out.reverse();
 }
 
-// ---------------- FETCH (WITH FALLBACK) ----------------
+// -------- FETCH --------
 async function fetchStooq(sym,freq){
 
   const proxies=[
@@ -80,12 +82,9 @@ async function fetchStooq(sym,freq){
 
   for(const t of tries){
     for(const proxy of proxies){
-
       try{
         const url=`https://stooq.com/q/d/l/?s=${t}&i=${freq}`;
-        const full=proxy + encodeURIComponent(url);
-
-        const res=await fetch(full);
+        const res=await fetch(proxy + encodeURIComponent(url));
         if(!res.ok) continue;
 
         const txt=await res.text();
@@ -100,7 +99,7 @@ async function fetchStooq(sym,freq){
   return null;
 }
 
-// ---------------- STOCK ----------------
+// -------- STOCK --------
 async function fetchStock(sym){
 
   const weekly = await fetchStooq(sym,'w');
@@ -109,26 +108,36 @@ async function fetchStock(sym){
   const daily = await fetchStooq(sym,'d');
 
   const price = weekly[weekly.length-1];
+
   const ema50 = daily ? calcEMA(daily,50) : null;
+  const sma50w = calcSMA(weekly,50);
   const sma200w = calcSMA(weekly,200);
 
-  return {sym,price,ema50,sma200w};
+  return {sym,price,ema50,sma50w,sma200w};
 }
 
-// ---------------- FILTER ----------------
+// -------- FILTER (TV STYLE) --------
 function pass(d){
+
   if(!d.price) return false;
+
+  // 1. Price > EMA50 (daily)
   if(d.ema50 && d.price < d.ema50) return false;
-  if(!d.sma200w || d.price < d.sma200w) return false;
+
+  // 2. TREND: SMA50W > SMA200W (core TV logic)
+  if(d.sma50w && d.sma200w && d.sma50w < d.sma200w) return false;
+
+  // 3. BUFFER around SMA200W (very important)
+  if(d.sma200w && d.price < d.sma200w * 0.95) return false;
+
   return true;
 }
 
-// ---------------- LOAD ----------------
+// -------- LOAD --------
 async function startLoad(){
 
   document.getElementById('body').innerHTML="";
   document.getElementById('tbl').style.display="none";
-
   allData=[];
 
   for(let i=0;i<UNIVERSE.length;i++){
@@ -142,7 +151,7 @@ async function startLoad(){
 
     if(d) allData.push(d);
 
-    await new Promise(r=>setTimeout(r,120)); // anti-block
+    await new Promise(r=>setTimeout(r,120)); // prevent blocking
   }
 
   render();
@@ -151,7 +160,7 @@ async function startLoad(){
     `✅ Loaded ${allData.length} stocks`;
 }
 
-// ---------------- RENDER ----------------
+// -------- RENDER --------
 function render(){
 
   const rows = allData.map(d=>{
@@ -161,6 +170,7 @@ function render(){
       <td>${d.sym}</td>
       <td>${d.price?.toFixed(2)}</td>
       <td>${d.ema50?.toFixed(2) || '-'}</td>
+      <td>${d.sma50w?.toFixed(2) || '-'}</td>
       <td>${d.sma200w?.toFixed(2) || '-'}</td>
       <td class="${ok?'pass':'fail'}">${ok?'PASS':'FAIL'}</td>
     </tr>`;
