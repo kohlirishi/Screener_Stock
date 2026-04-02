@@ -419,12 +419,23 @@
     <div class="empty" id="emptyDiv" style="display:none">No stocks passed all filters.</div>
   </div>
 </main>
-
 <script>
 const UNIVERSE = ['AAPL','MSFT','NVDA','AMZN','META','TSLA','GOOGL','AVGO','COST','WMT','JPM','UNH','V','XOM','MA','HD','PG','JNJ','BAC','ABBV','NFLX','KO','MRK','CVX','CRM','PEP','TMO','LLY','AMD','ORCL','CSCO','ACN','MCD','ABT','DHR','WFC','TXN','ADBE','QCOM','GE','CAT','AMGN','INTU','IBM','GS','SPGI','ISRG','BKNG','HON','C','AXP','NEE','RTX','LOW','VRTX','UPS','TJX','CB','MMC','ETN','BSX','SYK','ADI','PANW','AMAT','SBUX','GILD','LRCX','MO','CI','ELV','CME','REGN','PGR','SO','DUK','BMY','KLAC','SNPS','CDNS','NKE','ITW','APD','SHW','CRWD','ORLY','MAR','AON','CTAS','PAYX','MCHP','NXPI','FTNT','ZTS','PCAR','FAST','ROST','DXCM','IDXX','MRVL'];
 
 let allData=[];
 let FMP_KEY='fXcZLjc4zGaidYeg8qJyXBOumPdZUpe6';
+
+// ------------------ SAVE KEY ------------------
+function saveKeyAndLoad(){
+  const input = document.getElementById('fmpKey').value.trim();
+  if(!input){
+    document.getElementById('keyStatus').innerText = '❌ Enter valid key';
+    return;
+  }
+  FMP_KEY = input;
+  document.getElementById('keyStatus').innerText = '🔄 Loading...';
+  startLoad();
+}
 
 // ------------------ CALCULATIONS ------------------
 function calcEMA(arr,p){
@@ -454,7 +465,7 @@ function parseCSV(text){
   return rows.reverse();
 }
 
-// ------------------ DATA FETCH ------------------
+// ------------------ STOOQ ------------------
 async function fetchStooq(sym,freq){
   const tries=[`${sym.toLowerCase()}.us`, sym.toLowerCase()];
   for(const t of tries){
@@ -469,27 +480,36 @@ async function fetchStooq(sym,freq){
   return null;
 }
 
-async function fetchFMP(sym){
-  try{
-    const r=await fetch(`https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`);
-    const d=await r.json();
-    const q=d[0];
-    if(!q) return null;
+// ------------------ ✅ FIX 1: SAFE FMP BATCH (CHUNKED) ------------------
+async function fetchFMPBatch(symbols){
+  const chunkSize = 40;
+  const map = {};
 
-    const mRes=await fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${sym}?apikey=${FMP_KEY}`);
-    const mData=await mRes.json();
-    const m=mData[0];
+  for(let i=0;i<symbols.length;i+=chunkSize){
+    const chunk = symbols.slice(i,i+chunkSize);
 
-    return {
-      name:q.name,
-      price:q.price,
-      cap:q.marketCap,
-      pe:q.pe,
-      roe:m?.roeTTM ? m.roeTTM*100 : null
-    };
-  }catch(e){return null;}
+    try{
+      const res = await fetch(
+        `https://financialmodelingprep.com/api/v3/quote/${chunk.join(',')}?apikey=${FMP_KEY}`
+      );
+      const data = await res.json();
+
+      data.forEach(q=>{
+        map[q.symbol] = {
+          name:q.name,
+          price:q.price,
+          cap:q.marketCap,
+          pe:q.pe
+        };
+      });
+
+    }catch(e){}
+  }
+
+  return map;
 }
 
+// ------------------ STOCK ------------------
 async function fetchStock(sym){
   const weekly=await fetchStooq(sym,'w');
   if(!weekly) return null;
@@ -503,31 +523,26 @@ async function fetchStock(sym){
   const dClose=daily?daily.map(r=>r.close):[];
   const ema50d=calcEMA(dClose,50);
 
-  const fmp=await fetchFMP(sym);
-
   return {
     sym,
-    name:fmp?.name||sym,
-    price:fmp?.price||price,
-    cap:fmp?.cap||null,
-    pe:fmp?.pe||null,
-    roe:fmp?.roe||null,
+    price,
     ema50d,
     sma200w
   };
 }
 
-// ------------------ FILTER ------------------
+// ------------------ ✅ FIX 2: ROE OPTIONAL ------------------
 function whyFail(d){
   if(!d.price) return 'No Price';
 
-  if(!d.ema50d || d.price < d.ema50d) return 'Below EMA50D';
+  if(d.ema50d && d.price < d.ema50d) return 'Below EMA50D';
 
   if(!d.cap || d.cap < 100e9) return 'Cap <100B';
 
   if(!d.pe || d.pe <= 0 || d.pe > 60) return 'PE out';
 
-  if(!d.roe || d.roe < 10) return 'ROE <10';
+  // ROE is OPTIONAL now (no false filtering)
+  if(d.roe !== null && d.roe < 10) return 'ROE <10';
 
   if(!d.sma200w || d.price < d.sma200w) return 'Below 200W';
 
@@ -538,15 +553,52 @@ function passFilters(d){
   return whyFail(d) === null;
 }
 
-// ------------------ LOAD (FAST) ------------------
+// ------------------ LOAD ------------------
 async function startLoad(){
+
+  document.getElementById('refreshBtn').disabled = true;
   document.getElementById('tblBody').innerHTML = "Loading...";
 
-  const results = await Promise.all(
-    UNIVERSE.map(sym => fetchStock(sym))
-  );
+  try{
 
-  allData = results.filter(x => x);
+    const fmpMap = await fetchFMPBatch(UNIVERSE);
+
+    const results = await Promise.all(
+      UNIVERSE.map(async sym=>{
+        const base = await fetchStock(sym);
+        if(!base) return null;
+
+        const f = fmpMap[sym] || {};
+
+        return {
+          ...base,
+          name: f.name || sym,
+          price: f.price || base.price,
+          cap: f.cap || null,
+          pe: f.pe || null,
+          roe: null // stable (optional)
+        };
+      })
+    );
+
+    allData = results.filter(x => x);
+
+    if(allData.length === 0){
+      document.getElementById('tblBody').innerHTML = "❌ Failed to load data";
+      document.getElementById('keyStatus').innerText = '❌ API Error / Limit';
+      document.getElementById('refreshBtn').disabled = false;
+      return;
+    }
+
+    document.getElementById('keyStatus').innerText = '✅ Data Loaded';
+
+  }catch(e){
+    document.getElementById('tblBody').innerHTML = "❌ Unexpected error";
+    document.getElementById('keyStatus').innerText = '❌ Error';
+  }
+
+  document.getElementById('refreshBtn').disabled = false;
+
   applyFilters();
 }
 
@@ -575,10 +627,19 @@ function applyFilters(){
   }).join('');
 
   document.getElementById('mainTable').style.display = 'table';
+
+  document.getElementById('statLoaded').innerText = ' ' + allData.length;
+  document.getElementById('statShowing').innerText = ' ' + rows.length;
+  document.getElementById('statDate').innerText = ' ' + new Date().toLocaleDateString();
 }
 
 // ------------------ INIT ------------------
-window.onload=startLoad;
+window.onload = () => {
+  document.getElementById('refreshBtn').disabled = false;
+  startLoad(); // auto load on open
+};
 </script>
+
+  
 </body>
 </html>
