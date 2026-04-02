@@ -617,7 +617,7 @@ function applyFilters(silent=false){
     if(!showAll&&!passFilters(d)) return false;
     if(showAll&&(!d._done||!d.price)) return false;
     if((d.chg??0)<minChg||(d.chg??0)>maxChg) return false;
-    if(q&&!d.sym.toLowerCase().includes(q)&&!(d.name||'')' .toLowerCase().includes(q)) return false;
+    if(q&&!d.sym.toLowerCase().includes(q)&&!(d.name || '').toLowerCase().includes(q)) return false;
     return true;
   });
   rows.sort((a,b)=>{const av=a[sortKey],bv=b[sortKey];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;if(typeof av==='string')return sortDir*av.localeCompare(bv);return sortDir*(bv-av);});
