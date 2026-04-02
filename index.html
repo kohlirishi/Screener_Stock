@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Rishi Screener (No API)</title>
+<title>Rishi Screener (FINAL NO API)</title>
 
 <style>
 body{
@@ -37,7 +37,7 @@ td,th{
 
 <body>
 
-<h2>📈 Rishi Screener (NO API VERSION)</h2>
+<h2>📈 Rishi Screener (NO API - FINAL WORKING)</h2>
 
 <button onclick="startLoad()">Load Data</button>
 
@@ -65,30 +65,39 @@ function calcSMA(arr,p){
   return arr.slice(-p).reduce((a,b)=>a+b,0)/p;
 }
 
-// -------- FETCH FROM GITHUB (NO CORS ISSUE) --------
+// -------- FETCH --------
 async function fetchStock(sym){
 
   try{
-    const url = `https://cdn.jsdelivr.net/gh/datasets/stooq@master/data/daily/${sym.toLowerCase()}.us.csv`;
+
+    // ✅ FIXED PATH (this was your issue)
+    const url = `https://cdn.jsdelivr.net/gh/datasets/stooq@master/data/daily/us/${sym.toLowerCase()}.us.csv`;
 
     const res = await fetch(url);
 
     if(!res.ok){
-      console.log("❌ Fetch fail:", sym);
+      console.log("❌ Fetch failed:", sym);
       return null;
     }
 
     const text = await res.text();
 
+    if(!text || text.length < 100){
+      console.log("❌ Empty data:", sym);
+      return null;
+    }
+
     const lines = text.trim().split("\n");
 
-    // remove header
     const prices = [];
 
     for(let i=1;i<lines.length;i++){
       const cols = lines[i].split(",");
       if(cols.length >= 5){
-        prices.push(parseFloat(cols[4]));
+        const close = parseFloat(cols[4]);
+        if(!isNaN(close)){
+          prices.push(close);
+        }
       }
     }
 
@@ -112,7 +121,7 @@ async function fetchStock(sym){
 function pass(d){
   if(!d.price || !d.sma200) return false;
 
-  // TradingView-like buffer
+  // TradingView-like tolerance
   return d.price >= d.sma200 * 0.97;
 }
 
