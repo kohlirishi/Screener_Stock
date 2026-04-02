@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Rishi Screener FINAL</title>
+<title>Rishi Screener (No API)</title>
 
 <style>
 body{
@@ -37,7 +37,7 @@ td,th{
 
 <body>
 
-<h2>📈 Rishi Screener (FINAL STABLE)</h2>
+<h2>📈 Rishi Screener (NO API VERSION)</h2>
 
 <button onclick="startLoad()">Load Data</button>
 
@@ -57,10 +57,7 @@ td,th{
 
 <script>
 
-const WORKER = "https://polished-truth-5188.photos-kohli-2021.workers.dev/";
 const UNIVERSE = ['AVGO','COST','WMT','JPM'];
-
-let allData = [];
 
 // -------- SMA --------
 function calcSMA(arr,p){
@@ -68,28 +65,34 @@ function calcSMA(arr,p){
   return arr.slice(-p).reduce((a,b)=>a+b,0)/p;
 }
 
-// -------- FETCH STOCK --------
+// -------- FETCH FROM GITHUB (NO CORS ISSUE) --------
 async function fetchStock(sym){
 
   try{
-    const res = await fetch(`${WORKER}?symbol=${sym}`);
+    const url = `https://cdn.jsdelivr.net/gh/datasets/stooq@master/data/daily/${sym.toLowerCase()}.us.csv`;
+
+    const res = await fetch(url);
 
     if(!res.ok){
-      console.log("❌ HTTP error:", sym);
+      console.log("❌ Fetch fail:", sym);
       return null;
     }
 
-    const data = await res.json();
+    const text = await res.text();
 
-    // ✅ IMPORTANT: new API returns array directly
-    if(!Array.isArray(data) || data.length === 0){
-      console.log("❌ No data:", sym);
-      return null;
+    const lines = text.trim().split("\n");
+
+    // remove header
+    const prices = [];
+
+    for(let i=1;i<lines.length;i++){
+      const cols = lines[i].split(",");
+      if(cols.length >= 5){
+        prices.push(parseFloat(cols[4]));
+      }
     }
 
-    const prices = data.map(d => d.close).reverse();
-
-    if(prices.length < 50){
+    if(prices.length < 200){
       console.log("❌ Not enough data:", sym);
       return null;
     }
@@ -100,18 +103,16 @@ async function fetchStock(sym){
     return {sym,price,sma200};
 
   }catch(e){
-    console.log("❌ Fetch error:", sym);
+    console.log("❌ Error:", sym);
     return null;
   }
 }
 
 // -------- FILTER --------
-// tuned to match TradingView style behavior
 function pass(d){
-
   if(!d.price || !d.sma200) return false;
 
-  // slight buffer (TV doesn't use exact hard cut)
+  // TradingView-like buffer
   return d.price >= d.sma200 * 0.97;
 }
 
@@ -150,7 +151,7 @@ async function startLoad(){
     out += `<tr>
       <td>${d.sym}</td>
       <td>${d.price.toFixed(2)}</td>
-      <td>${d.sma200?.toFixed(2) || '-'}</td>
+      <td>${d.sma200.toFixed(2)}</td>
       <td class="${ok?'pass':'fail'}">${ok?'PASS':'FAIL'}</td>
     </tr>`;
   }
