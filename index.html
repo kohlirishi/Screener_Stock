@@ -343,7 +343,7 @@
 <!-- FMP API Key bar -->
 <div class="api-bar">
   <label>🔑 FMP Key</label>
-  <input type="text" id="fmpKey" placeholder="Get free key at financialmodelingprep.com/developer/docs (250 req/day free)" value="">
+  <input type="text" id="fmpKey" placeholder="Get free key at financialmodelingprep.com/developer/docs (250 req/day free)" value="fXcZLjc4zGaidYeg8qJyXBOumPdZUpe6">
   <button onclick="saveKeyAndLoad()">Save &amp; Load</button>
   <span class="hint" id="keyStatus">⚠️ Enter your free FMP key above, then click Save &amp; Load</span>
 </div>
@@ -656,7 +656,17 @@ function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}applyFi
 function err(msg){const b=document.getElementById('errbox');b.style.display=msg?'block':'none';b.textContent=msg;}
 
 window.addEventListener('DOMContentLoaded',()=>{
-  FMP_KEY = localStorage.getItem('fmp_key')||'';
+  // Key baked in — always start loading immediately
+  if(!FMP_KEY) FMP_KEY = 'fXcZLjc4zGaidYeg8qJyXBOumPdZUpe6';
+  document.getElementById('fmpKey').value = FMP_KEY;
+  document.getElementById('keyStatus').innerHTML='✅ FMP key ready — loading data…';
+  document.getElementById('keyStatus').style.color='#4ade80';
+  document.getElementById('refreshBtn').disabled=false;
+  startLoad();
+  // original block below (skip its own startLoad to avoid double-load)
+  const _skip=true;
+  if(_skip) return;
+  FMP_KEY = localStorage.getItem('fmp_key')||'fXcZLjc4zGaidYeg8qJyXBOumPdZUpe6';
   if(FMP_KEY){
     document.getElementById('fmpKey').value=FMP_KEY;
     document.getElementById('keyStatus').innerHTML='✅ Key loaded from browser — click Refresh to reload data';
