@@ -16,7 +16,7 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 
 <body>
 
-<h2>📈 Rishi Trend Screener (Aligned with TradingView)</h2>
+<h2>📈 Rishi Trend Screener (Stable Version)</h2>
 <button onclick="startLoad()">Load Data</button>
 <div id="status" style="margin-top:10px;color:#aaa"></div>
 
@@ -70,32 +70,32 @@ function parseCSV(text){
   return out.reverse();
 }
 
-// -------- FETCH --------
+// -------- FETCH (ROBUST) --------
 async function fetchStooq(sym,freq){
 
-  const proxies=[
-    "https://api.allorigins.win/raw?url=",
-    "https://corsproxy.io/?"
+  const url = `https://stooq.com/q/d/l/?s=${sym.toLowerCase()}.us&i=${freq}`;
+
+  const sources = [
+    url,
+    "https://corsproxy.io/?" + encodeURIComponent(url),
+    "https://api.allorigins.win/raw?url=" + encodeURIComponent(url)
   ];
 
-  const tries=[`${sym.toLowerCase()}.us`, sym.toLowerCase()];
+  for(const src of sources){
+    try{
+      const res = await fetch(src);
+      if(!res.ok) continue;
 
-  for(const t of tries){
-    for(const proxy of proxies){
-      try{
-        const url=`https://stooq.com/q/d/l/?s=${t}&i=${freq}`;
-        const res=await fetch(proxy + encodeURIComponent(url));
-        if(!res.ok) continue;
+      const txt = await res.text();
 
-        const txt=await res.text();
-        if(txt.includes("No data") || txt.length<50) continue;
+      if(txt.includes("No data") || txt.length < 50) continue;
 
-        return parseCSV(txt);
+      return parseCSV(txt);
 
-      }catch(e){}
-    }
+    }catch(e){}
   }
 
+  console.log("❌ Failed:", sym, freq);
   return null;
 }
 
@@ -116,19 +116,15 @@ async function fetchStock(sym){
   return {sym,price,ema50,sma50w,sma200w};
 }
 
-// -------- FILTER (RELAXED TV STYLE) --------
+// -------- FILTER --------
 function pass(d){
 
   if(!d.price) return false;
 
-  // 1. Price > EMA50 (allow small buffer)
   if(d.ema50 && d.price < d.ema50 * 0.97) return false;
 
-  // 2. Allow slight weakness around 200W (IMPORTANT)
   if(d.sma200w && d.price < d.sma200w * 0.90) return false;
 
-  // 3. DO NOT strictly enforce SMA50W > SMA200W
-  // just ensure it's not massively bearish
   if(d.sma50w && d.sma200w && d.sma50w < d.sma200w * 0.90)
     return false;
 
@@ -151,9 +147,19 @@ async function startLoad(){
 
     const d = await fetchStock(sym);
 
-    if(d) allData.push(d);
+    if(d){
+      allData.push(d);
+    } else {
+      console.log("⚠️ Skipped:", sym);
+    }
 
-    await new Promise(r=>setTimeout(r,120));
+    await new Promise(r=>setTimeout(r,300)); // IMPORTANT (rate limit safety)
+  }
+
+  if(allData.length === 0){
+    document.getElementById('status').innerText =
+      "❌ No data loaded (proxy blocked). Try refresh.";
+    return;
   }
 
   render();
