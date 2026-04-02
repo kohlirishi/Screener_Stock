@@ -14,7 +14,6 @@
 
 
 
-
   :root{
     --bg:#0f1117;--surf:#1a1d27;--surf2:#21253a;--bdr:#2a2d3e;
     --txt:#e8eaf0;--txt-m:#8b90a7;--pri:#3b82f6;--grn:#22c55e;
@@ -315,70 +314,22 @@
   .extra-row input[type=number]{background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);padding:5px 10px;border-radius:6px;font-size:12px;outline:none;width:90px;}
   .na{color:var(--txt-m);font-size:11px;}
   .why-fail{font-size:10px;color:#f87171;}
-  .info-bar{background:#1e3a1e;border:1px solid #2d5a2d;border-radius:6px;padding:10px 16px;margin:10px 28px;font-size:12px;color:#86efac;display:none;}
-  .pass-row{background:rgba(74,222,128,0.05)!important;}
-
-  .setup-box{background:#0f1e10;border:2px solid #22c55e;border-radius:10px;padding:20px 24px;margin:20px 28px;font-size:13px;color:#bbf7d0;}
-  .setup-box h2{color:#4ade80;font-size:16px;margin-bottom:12px;}
-  .setup-box .method{background:#0a150b;border:1px solid #166534;border-radius:6px;padding:12px 16px;margin:10px 0;}
-  .setup-box .method-title{color:#4ade80;font-weight:700;font-size:13px;margin-bottom:6px;}
-  .setup-box code{background:#1a2e1b;color:#86efac;padding:6px 12px;border-radius:4px;font-family:monospace;font-size:12px;display:block;margin:6px 0;user-select:all;cursor:pointer;}
-  .setup-box code:hover{background:#1f3520;border:1px solid #22c55e;}
-  .setup-box .note{color:#6ee7b7;font-size:11px;margin-top:6px;}
-  .filter-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 28px;background:var(--surf);border-bottom:1px solid var(--bdr);align-items:center;}
-  .chips-label{font-size:10px;font-weight:700;color:var(--txt-m);text-transform:uppercase;letter-spacing:.06em;margin-right:4px;}
-  .fchip{display:inline-flex;align-items:center;gap:5px;background:#1a1f35;border:1px solid var(--pri);border-radius:5px;padding:3px 10px;font-size:11px;color:#93c5fd;font-weight:600;white-space:nowrap;}
-  .fchip .dot{width:6px;height:6px;border-radius:50%;background:var(--grn);display:inline-block;}
-  .toggle-wrap{display:flex;align-items:center;gap:7px;margin-left:8px;}
-  .toggle{position:relative;width:32px;height:18px;}
-  .toggle input{opacity:0;width:0;height:0;}
-  .slider{position:absolute;cursor:pointer;inset:0;background:#333;border-radius:18px;transition:.3s;}
-  .slider:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
-  input:checked+.slider{background:var(--grn);}
-  input:checked+.slider:before{transform:translateX(14px);}
-  .toggle-label{font-size:11px;color:var(--txt-m);font-weight:600;cursor:pointer;white-space:nowrap;}
-  .extra-row{display:flex;flex-wrap:wrap;gap:10px;padding:10px 28px;background:var(--surf);border-bottom:1px solid var(--bdr);align-items:center;}
-  .extra-row label{font-size:11px;color:var(--txt-m);font-weight:600;text-transform:uppercase;}
-  .extra-row input[type=number]{background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);padding:5px 10px;border-radius:6px;font-size:12px;outline:none;width:90px;}
-  .na{color:var(--txt-m);font-size:11px;}
-  .why-fail{font-size:10px;color:#f87171;}
   .pass-row{background:rgba(74,222,128,0.06)!important;}
-  .proxy-status{font-size:11px;color:var(--txt-m);padding:4px 28px;background:var(--surf2);}
+  .api-bar{display:flex;align-items:center;gap:12px;padding:10px 28px;background:#0f1a2e;border-bottom:2px solid #00bfa5;}
+  .api-bar label{font-size:11px;color:#00bfa5;font-weight:700;text-transform:uppercase;white-space:nowrap;}
+  .api-bar input{background:#0a1628;border:1px solid #00bfa5;color:#e0e0e0;padding:7px 12px;border-radius:6px;font-size:12px;outline:none;flex:1;max-width:340px;}
+  .api-bar button{padding:7px 16px;background:#00bfa5;color:#0a0e27;border:none;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;}
+  .api-bar .hint{font-size:11px;color:#4ade80;}
+  .src-note{font-size:10px;color:var(--txt-m);padding:4px 28px;background:var(--surf2);}
 </style>
 </head>
 <body>
-
-<!-- Setup instructions shown only when on file:// -->
-<div class="setup-box" id="setupBox" style="display:none">
-  <h2>⚡ One-Time Setup Required — Choose Any Option Below</h2>
-  <p style="margin-bottom:12px;color:#a7f3d0">Your browser blocks external API calls when opening HTML files directly (file://). Fix it in 30 seconds with any of these:</p>
-
-  <div class="method">
-    <div class="method-title">🐍 Option 1 — Python (Easiest, Mac built-in)</div>
-    <p style="font-size:11px;color:#86efac;margin-bottom:4px">Open Terminal and run these 2 commands:</p>
-    <code onclick="navigator.clipboard.writeText(this.textContent)" title="Click to copy">cd ~/Downloads</code>
-    <code onclick="navigator.clipboard.writeText(this.textContent)" title="Click to copy">python3 -m http.server 8080</code>
-    <p class="note">Then open: <strong style="color:#4ade80">http://localhost:8080/stock-screener-jsonp-final.html</strong> in Chrome</p>
-  </div>
-
-  <div class="method">
-    <div class="method-title">🌐 Option 2 — Netlify Drop (Zero install, 30 seconds)</div>
-    <p style="font-size:11px;color:#86efac;">Go to <strong style="color:#4ade80">netlify.com/drop</strong> → drag this HTML file onto the page → it gives you a live URL instantly. Done!</p>
-  </div>
-
-  <div class="method">
-    <div class="method-title">💻 Option 3 — VS Code Live Server</div>
-    <p style="font-size:11px;color:#86efac;">Install "Live Server" extension in VS Code → right-click the HTML file → Open with Live Server</p>
-  </div>
-
-  <p style="margin-top:12px;font-size:11px;color:#6ee7b7">💡 Click any command above to copy it. Once you open via http://, this setup box disappears and the screener loads automatically.</p>
-</div>
 
 <header class="hdr">
   <div class="logo">
     <svg width="30" height="30" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#3b82f6"/><path d="M5 22L10 14L15 18L21 9L27 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="27" cy="12" r="2.2" fill="white"/></svg>
     Rishi above 200 SMA / EMA
-    <span style="font-size:11px;font-weight:400;color:var(--txt-m);margin-left:6px;">S&amp;P 100</span>
+    <span style="font-size:11px;font-weight:400;color:var(--txt-m);margin-left:6px;">S&amp;P 100 · stooq + FMP</span>
   </div>
   <div class="hdr-right">
     <span class="last-upd" id="lastUpd"></span>
@@ -389,7 +340,15 @@
   </div>
 </header>
 
-<div id="proxyStatus" class="proxy-status" style="display:none"></div>
+<!-- FMP API Key bar -->
+<div class="api-bar">
+  <label>🔑 FMP Key</label>
+  <input type="text" id="fmpKey" placeholder="Get free key at financialmodelingprep.com/developer/docs (250 req/day free)" value="">
+  <button onclick="saveKeyAndLoad()">Save &amp; Load</button>
+  <span class="hint" id="keyStatus">⚠️ Enter your free FMP key above, then click Save &amp; Load</span>
+</div>
+
+<div class="src-note">📊 Price &amp; MA data: stooq.com (free, open CORS) · Fundamentals: financialmodelingprep.com (free key)</div>
 
 <div class="filter-chips">
   <span class="chips-label">Filters</span>
@@ -424,13 +383,14 @@
   <div class="stat">Loaded<strong id="statLoaded"> 0</strong></div>
   <div class="stat">Passed<strong id="statShowing"> —</strong></div>
   <div class="stat">Date<strong id="statDate"> —</strong></div>
-  <div class="stat" id="proxyLabel" style="display:none">Via<strong id="proxyName" style="color:#00bfa5"> —</strong></div>
 </div>
 
 <main>
   <div id="errbox" class="errbox"></div>
   <div class="top-bar">
-    <div class="search-wrap"><span class="search-ico">🔍</span><input type="text" id="searchBox" placeholder="Search symbol or company…" oninput="applyFilters()"></div>
+    <div class="search-wrap"><span class="search-ico">🔍</span>
+      <input type="text" id="searchBox" placeholder="Search symbol or company…" oninput="applyFilters()">
+    </div>
     <div class="result-lbl" id="resultLbl"></div>
   </div>
   <div class="tbl-wrap">
@@ -460,22 +420,13 @@
       </tr></thead>
       <tbody id="tblBody"></tbody>
     </table>
-    <div class="empty" id="emptyDiv" style="display:none">No stocks passed all filters right now.</div>
+    <div class="empty" id="emptyDiv" style="display:none">No stocks passed all filters.</div>
   </div>
 </main>
 
 <script>
 const UNIVERSE = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'META', 'TSLA', 'GOOGL', 'AVGO', 'COST', 'WMT', 'JPM', 'UNH', 'V', 'XOM', 'MA', 'HD', 'PG', 'JNJ', 'BAC', 'ABBV', 'NFLX', 'KO', 'MRK', 'CVX', 'CRM', 'PEP', 'TMO', 'LLY', 'AMD', 'ORCL', 'CSCO', 'ACN', 'MCD', 'ABT', 'DHR', 'WFC', 'TXN', 'ADBE', 'QCOM', 'GE', 'CAT', 'AMGN', 'INTU', 'IBM', 'GS', 'SPGI', 'ISRG', 'BKNG', 'HON', 'C', 'AXP', 'NEE', 'RTX', 'LOW', 'VRTX', 'UPS', 'TJX', 'CB', 'MMC', 'ETN', 'BSX', 'SYK', 'ADI', 'PANW', 'AMAT', 'SBUX', 'GILD', 'LRCX', 'MO', 'CI', 'ELV', 'CME', 'REGN', 'PGR', 'SO', 'DUK', 'BMY', 'KLAC', 'SNPS', 'CDNS', 'NKE', 'ITW', 'APD', 'SHW', 'CRWD', 'ORLY', 'MAR', 'AON', 'CTAS', 'PAYX', 'MCHP', 'NXPI', 'FTNT', 'ZTS', 'PCAR', 'FAST', 'ROST', 'DXCM', 'IDXX', 'MRVL'];
-
-// Working proxies — skip direct fetch to avoid poisoning fallback
-const PROXIES = [
-  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-];
-
-let workingProxy = null; // cache which proxy works
-let allData = [], sortKey = 'cap', sortDir = -1;
+let allData=[], sortKey='cap', sortDir=-1, FMP_KEY='';
 
 const fP   = v => v==null?'—':'$'+parseFloat(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fC   = v => {if(!v)return'—';if(v>=1e12)return'$'+(v/1e12).toFixed(2)+'T';if(v>=1e9)return'$'+(v/1e9).toFixed(1)+'B';return'$'+(v/1e6).toFixed(0)+'M';};
@@ -483,121 +434,142 @@ const fPct = v => v==null?'—':(v>=0?'+':'')+parseFloat(v).toFixed(2)+'%';
 const fNum = v => v==null?'—':parseFloat(v).toFixed(1);
 const ts   = () => new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
 
-function calcEMA(arr, p) {
-  const v=arr.filter(x=>x!=null);
-  if(v.length<p)return null;
-  const k=2/(p+1);
-  let e=v.slice(0,p).reduce((a,b)=>a+b,0)/p;
-  for(let i=p;i<v.length;i++)e=v[i]*k+e*(1-k);
-  return e;
-}
-function calcSMA(arr, p) {
-  const v=arr.filter(x=>x!=null);
-  if(v.length<p)return null;
-  return v.slice(-p).reduce((a,b)=>a+b,0)/p;
+function calcEMA(arr,p){const v=arr.filter(x=>x!=null);if(v.length<p)return null;const k=2/(p+1);let e=v.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=p;i<v.length;i++)e=v[i]*k+e*(1-k);return e;}
+function calcSMA(arr,p){const v=arr.filter(x=>x!=null);if(v.length<p)return null;return v.slice(-p).reduce((a,b)=>a+b,0)/p;}
+
+// Parse stooq CSV
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const cols=lines[i].split(',');
+    if(cols.length>=5&&cols[4]){
+      rows.push({date:cols[0],open:+cols[1],high:+cols[2],low:+cols[3],close:+cols[4],vol:+cols[5]||0});
+    }
+  }
+  return rows.reverse(); // stooq returns newest first
 }
 
-async function smartFetch(url) {
-  // If we already found a working proxy, use it directly
-  if(workingProxy !== null) {
-    try {
-      const r = await fetch(PROXIES[workingProxy](url));
-      if(r.ok) return r;
-    } catch(e) { workingProxy = null; }
-  }
-  // Try each proxy
-  for(let i=0;i<PROXIES.length;i++){
-    try {
-      const r = await fetch(PROXIES[i](url));
-      if(r.ok) {
-        workingProxy = i;
-        const names = ['corsproxy.io','allorigins.win','codetabs.com'];
-        document.getElementById('proxyLabel').style.display='flex';
-        document.getElementById('proxyName').textContent=' '+names[i];
-        return r;
-      }
-    } catch(e) {}
-  }
-  return null;
+async function fetchStooq(sym, freq) {
+  // stooq.com — open CORS, no key, works from GitHub Pages
+  const url = `https://stooq.com/q/d/l/?s=${sym.toLowerCase()}.us&i=${freq}`;
+  try {
+    const r = await fetch(url);
+    if(!r.ok) return null;
+    const text = await r.text();
+    if(text.includes('No data') || text.length < 50) return null;
+    return parseCSV(text);
+  } catch(e) { return null; }
+}
+
+async function fetchFMP(sym) {
+  if(!FMP_KEY) return null;
+  try {
+    // Get quote (price, market cap, PE, EPS, change)
+    const qUrl = `https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`;
+    const qr = await fetch(qUrl);
+    if(!qr.ok) return null;
+    const qd = await qr.json();
+    const q = Array.isArray(qd) ? qd[0] : qd;
+    if(!q) return null;
+
+    // Get key metrics for ROE, EPS growth
+    const mUrl = `https://financialmodelingprep.com/api/v3/key-metrics-ttm/${sym}?apikey=${FMP_KEY}`;
+    const mr = await fetch(mUrl);
+    const md = mr.ok ? await mr.json() : [];
+    const m = Array.isArray(md) ? md[0] : null;
+
+    return {
+      name: q.name || sym,
+      price: q.price,
+      chg: q.changesPercentage,
+      cap: q.marketCap,
+      pe: q.pe,
+      roe: m?.roeTTM != null ? m.roeTTM * 100 : null,
+      eps_growth: q.epsgrowth != null ? q.epsgrowth * 100 : (m?.revenuePerShareTTM != null ? null : null)
+    };
+  } catch(e) { return null; }
 }
 
 async function fetchStock(sym) {
   try {
-    const wUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1wk&range=5y`;
-    const wr = await smartFetch(wUrl);
-    if(!wr) return null;
-    const wj = await wr.json();
-    const wres = wj?.chart?.result?.[0];
-    if(!wres) return null;
+    // 1. Weekly data from stooq (5Y)
+    const weekly = await fetchStooq(sym, 'w');
+    if(!weekly || weekly.length < 10) return null;
 
-    const meta = wres.meta||{};
-    const wq   = wres.indicators?.quote?.[0]||{};
-    const wClose= wq.close||[];
-    const wLow  = wq.low||[];
-    const validC= wClose.filter(c=>c!=null);
+    const wClose = weekly.map(r=>r.close);
+    const wLow   = weekly.map(r=>r.low);
+    const price  = wClose[wClose.length-1];
+    const prev   = wClose[wClose.length-2];
+    const chg    = prev ? ((price-prev)/prev)*100 : 0;
 
-    const price     = meta.regularMarketPrice;
-    const prevClose = meta.previousClose||meta.chartPreviousClose;
-    const chg       = (price&&prevClose) ? ((price-prevClose)/prevClose)*100 : null;
-    const cap       = meta.marketCap||null;
+    const sma50w  = calcSMA(wClose, 50);
+    const sma200w = calcSMA(wClose, 200);
+    const perf5y  = wClose.length>=2 ? ((wClose[wClose.length-1]-wClose[0])/wClose[0])*100 : null;
+    const recent52L = wLow.slice(-52).filter(l=>l>0);
+    const low52w = recent52L.length ? Math.min(...recent52L) : null;
 
-    const sma50w  = calcSMA(validC, 50);
-    const sma200w = calcSMA(validC, 200);
-    const perf5y  = validC.length>=2 ? ((validC[validC.length-1]-validC[0])/validC[0])*100 : null;
-    const low52w  = (wLow.slice(-52).filter(l=>l!=null)||[]).length ? Math.min(...wLow.slice(-52).filter(l=>l!=null)) : null;
+    // 2. Daily data from stooq (1Y) for EMA 50D
+    const daily = await fetchStooq(sym, 'd');
+    const dClose = daily ? daily.slice(-300).map(r=>r.close) : [];
+    const ema50d = calcEMA(dClose, 50);
 
-    // Daily EMA 50D
-    let ema50d=null;
-    try {
-      const dUrl=`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=1y`;
-      const dr=await smartFetch(dUrl);
-      if(dr){const dj=await dr.json();const dc=(dj?.chart?.result?.[0]?.indicators?.quote?.[0]?.close||[]).filter(c=>c!=null);ema50d=calcEMA(dc,50);}
-    }catch(e){}
+    // 3. Fundamentals from FMP
+    const fmp = await fetchFMP(sym);
 
-    // Fundamentals
-    let pe=null,roe=null,eps_growth=null,name=sym,capFull=cap;
-    try {
-      const fsUrl=`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${sym}?modules=price,financialData,defaultKeyStatistics`;
-      const fr=await smartFetch(fsUrl);
-      if(fr){
-        const fj=await fr.json();
-        const fres=fj?.quoteSummary?.result?.[0];
-        if(fres){
-          const fp=fres.price||{},fd=fres.financialData||{},fk=fres.defaultKeyStatistics||{};
-          name=fp.longName||fp.shortName||sym;
-          pe=fp.trailingPE?.raw||null;
-          capFull=fp.marketCap?.raw||cap;
-          roe=fd.returnOnEquity?.raw!=null?fd.returnOnEquity.raw*100:null;
-          eps_growth=fk.earningsQuarterlyGrowth?.raw!=null?fk.earningsQuarterlyGrowth.raw*100:(fd.earningsGrowth?.raw!=null?fd.earningsGrowth.raw*100:null);
-        }
-      }
-    }catch(e){}
-
-    return {sym,name,price,chg,cap:capFull||cap,pe,roe,eps_growth,perf5y,ema50d,sma50w,sma200w,low52w,_done:true};
-  }catch(e){return null;}
+    return {
+      sym,
+      name: fmp?.name || sym,
+      price: fmp?.price || price,
+      chg: fmp?.chg ?? chg,
+      cap: fmp?.cap || null,
+      pe: fmp?.pe || null,
+      roe: fmp?.roe ?? null,
+      eps_growth: fmp?.eps_growth ?? null,
+      perf5y,
+      ema50d,
+      sma50w,
+      sma200w,
+      low52w,
+      _done: true
+    };
+  } catch(e) { return null; }
 }
 
 function whyFail(d){
-  if(!d._done||!d.price)          return 'no data';
-  if(!d.ema50d)                   return 'EMA50D missing';
-  if(d.price<d.ema50d)            return `P $${d.price?.toFixed(0)} < EMA50D $${d.ema50d?.toFixed(0)}`;
-  if(!d.cap||d.cap<100e9)         return `Cap ${fC(d.cap)} < $100B`;
-  if(!d.pe||d.pe<=0||d.pe>60)     return `PE ${fNum(d.pe)} not 0-60`;
-  if(d.perf5y==null||d.perf5y<100)return `5Y ${fNum(d.perf5y)}% < 100%`;
-  if(d.roe==null||d.roe<10)       return `ROE ${fNum(d.roe)}% < 10%`;
-  if(!d.sma200w)                  return 'SMA200W missing';
-  if(!d.low52w)                   return '52WLow missing';
-  if(d.low52w<d.sma200w)          return `52WL<200W`;
-  if(!d.sma50w)                   return 'SMA50W missing';
-  if(d.price<d.sma50w)            return `P<SMA50W $${d.sma50w?.toFixed(0)}`;
-  if(d.price<d.sma200w)           return `P<SMA200W $${d.sma200w?.toFixed(0)}`;
-  if(d.sma50w<d.sma200w)          return 'Death cross';
+  if(!d._done||!d.price)           return 'no data';
+  if(!d.ema50d)                    return 'EMA50D missing';
+  if(d.price<d.ema50d)             return `P $${d.price?.toFixed(0)}<EMA50 $${d.ema50d?.toFixed(0)}`;
+  if(!d.cap||d.cap<100e9)          return `Cap ${fC(d.cap)}<$100B`;
+  if(!d.pe||d.pe<=0||d.pe>60)      return `PE ${fNum(d.pe)} not 0-60`;
+  if(d.perf5y==null||d.perf5y<100) return `5Y ${fNum(d.perf5y)}%<100%`;
+  if(d.roe==null||d.roe<10)        return `ROE ${fNum(d.roe)}%<10%`;
+  if(!d.sma200w)                   return 'SMA200W missing';
+  if(!d.low52w)                    return '52WLow missing';
+  if(d.low52w<d.sma200w)           return `52WL<200W`;
+  if(!d.sma50w)                    return 'SMA50W missing';
+  if(d.price<d.sma50w)             return `P<SMA50W $${d.sma50w?.toFixed(0)}`;
+  if(d.price<d.sma200w)            return `P<SMA200W $${d.sma200w?.toFixed(0)}`;
+  if(d.sma50w<d.sma200w)           return 'Death cross';
   if(d.eps_growth==null||d.eps_growth<10) return `EPS ${fNum(d.eps_growth)}%<10%`;
   return null;
 }
 function passFilters(d){
-  if(!document.getElementById('autoFilterToggle').checked)return d._done&&!!d.price;
+  if(!document.getElementById('autoFilterToggle').checked) return d._done&&!!d.price;
   return whyFail(d)===null;
+}
+
+function saveKeyAndLoad(){
+  FMP_KEY = document.getElementById('fmpKey').value.trim();
+  localStorage.setItem('fmp_key', FMP_KEY);
+  if(FMP_KEY){
+    document.getElementById('keyStatus').innerHTML='✅ Key saved — loading data…';
+    document.getElementById('keyStatus').style.color='#4ade80';
+  } else {
+    document.getElementById('keyStatus').innerHTML='⚠️ No FMP key — loading price/MA only (no P/E, ROE, EPS filters)';
+    document.getElementById('keyStatus').style.color='#fbbf24';
+  }
+  startLoad();
 }
 
 async function startLoad(){
@@ -608,7 +580,8 @@ async function startLoad(){
   document.getElementById('emptyDiv').style.display='none';
   document.getElementById('statLoaded').textContent=' 0';
   err('');
-  const total=UNIVERSE.length;let done=0,loadedOk=0;
+  const total=UNIVERSE.length; let done=0, loadedOk=0;
+
   for(let i=0;i<total;i+=2){
     const batch=UNIVERSE.slice(i,i+2);
     const results=await Promise.all(batch.map(s=>fetchStock(s)));
@@ -620,11 +593,12 @@ async function startLoad(){
     const pct=Math.round((done/total)*100);
     document.getElementById('progBar').style.width=pct+'%';
     document.getElementById('progMsg').textContent=`Loading ${done}/${total} (${pct}%)…`;
-    document.getElementById('progSub').textContent=batch.join(', ')+' — '+loadedOk+' loaded';
+    document.getElementById('progSub').textContent=batch.join(', ')+' — '+loadedOk+' with data';
     document.getElementById('statLoaded').textContent=' '+loadedOk;
     applyFilters(true);
-    await new Promise(r=>setTimeout(r,350));
+    await new Promise(r=>setTimeout(r,300));
   }
+
   document.getElementById('progressDiv').style.display='none';
   document.getElementById('statDate').textContent=' '+new Date().toISOString().split('T')[0];
   document.getElementById('lastUpd').textContent='Updated: '+ts();
@@ -638,17 +612,18 @@ function applyFilters(silent=false){
   const minChg=document.getElementById('fMinChg').value!==''?+document.getElementById('fMinChg').value:-Infinity;
   const maxChg=document.getElementById('fMaxChg').value!==''?+document.getElementById('fMaxChg').value:Infinity;
   document.getElementById('whyHead').style.display=showAll?'table-cell':'none';
+
   let rows=allData.filter(d=>{
-    if(!showAll&&!passFilters(d))return false;
-    if(showAll&&(!d._done||!d.price))return false;
-    if((d.chg??0)<minChg||(d.chg??0)>maxChg)return false;
-    if(q&&!d.sym.toLowerCase().includes(q)&&!(d.name||'').toLowerCase().includes(q))return false;
+    if(!showAll&&!passFilters(d)) return false;
+    if(showAll&&(!d._done||!d.price)) return false;
+    if((d.chg??0)<minChg||(d.chg??0)>maxChg) return false;
+    if(q&&!d.sym.toLowerCase().includes(q)&&!(d.name||'')' .toLowerCase().includes(q)) return false;
     return true;
   });
   rows.sort((a,b)=>{const av=a[sortKey],bv=b[sortKey];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;if(typeof av==='string')return sortDir*av.localeCompare(bv);return sortDir*(bv-av);});
   const passed=allData.filter(d=>passFilters(d)).length;
   document.getElementById('statShowing').textContent=' '+passed;
-  document.getElementById('resultLbl').innerHTML=showAll?`Showing <strong>${rows.length}</strong> loaded`:`<strong>${passed}</strong> passed all filters`;
+  document.getElementById('resultLbl').innerHTML=showAll?`Showing <strong>${rows.length}</strong> loaded`:`<strong>${passed}</strong> passed`;
   document.getElementById('emptyDiv').style.display=(!silent&&rows.length===0)?'block':'none';
   document.getElementById('mainTable').style.display=rows.length?'table':'none';
   const maBadge=(val,price)=>{if(!val||!price)return'<span class="na">—</span>';const a=price>=val;return`<span class="sma-badge ${a?'sma-above':'sma-below'}">${a?'▲':'▼'} $${val.toFixed(1)}</span>`;};
@@ -680,14 +655,13 @@ function applyFilters(silent=false){
 function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}applyFilters();}
 function err(msg){const b=document.getElementById('errbox');b.style.display=msg?'block':'none';b.textContent=msg;}
 
-window.addEventListener('DOMContentLoaded', () => {
-  const isFile = location.protocol === 'file:';
-  if(isFile){
-    document.getElementById('setupBox').style.display='block';
-    // Still try to load — Chrome may allow it
-    startLoad();
-  } else {
-    document.getElementById('setupBox').style.display='none';
+window.addEventListener('DOMContentLoaded',()=>{
+  FMP_KEY = localStorage.getItem('fmp_key')||'';
+  if(FMP_KEY){
+    document.getElementById('fmpKey').value=FMP_KEY;
+    document.getElementById('keyStatus').innerHTML='✅ Key loaded from browser — click Refresh to reload data';
+    document.getElementById('keyStatus').style.color='#4ade80';
+    document.getElementById('refreshBtn').disabled=false;
     startLoad();
   }
 });
