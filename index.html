@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Rishi Trend Screener</title>
+<title>Rishi Trend Screener (Cloudflare)</title>
 
 <style>
 body{background:#0f1117;color:#e8eaf0;font-family:sans-serif;padding:20px}
@@ -16,7 +16,7 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 
 <body>
 
-<h2>📈 Rishi Trend Screener (Stable Version)</h2>
+<h2>📈 Rishi Trend Screener (Cloudflare Stable)</h2>
 <button onclick="startLoad()">Load Data</button>
 <div id="status" style="margin-top:10px;color:#aaa"></div>
 
@@ -35,6 +35,8 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 </table>
 
 <script>
+
+const WORKER_URL = "https://polished-truth-5188.photos-kohli-2021.workers.dev/";
 
 const UNIVERSE = ['AVGO','COST','WMT','JPM'];
 
@@ -70,33 +72,24 @@ function parseCSV(text){
   return out.reverse();
 }
 
-// -------- FETCH (ROBUST) --------
+// -------- FETCH VIA CLOUDFLARE --------
 async function fetchStooq(sym,freq){
 
-  const url = `https://stooq.com/q/d/l/?s=${sym.toLowerCase()}.us&i=${freq}`;
+  try{
+    const res = await fetch(`${WORKER_URL}?symbol=${sym}&interval=${freq}`);
 
-  const sources = [
-    url,
-    "https://corsproxy.io/?" + encodeURIComponent(url),
-    "https://api.allorigins.win/raw?url=" + encodeURIComponent(url)
-  ];
+    if(!res.ok) return null;
 
-  for(const src of sources){
-    try{
-      const res = await fetch(src);
-      if(!res.ok) continue;
+    const txt = await res.text();
 
-      const txt = await res.text();
+    if(txt.includes("No data") || txt.length < 50) return null;
 
-      if(txt.includes("No data") || txt.length < 50) continue;
+    return parseCSV(txt);
 
-      return parseCSV(txt);
-
-    }catch(e){}
+  }catch(e){
+    console.log("❌ Fetch error:", sym, freq);
+    return null;
   }
-
-  console.log("❌ Failed:", sym, freq);
-  return null;
 }
 
 // -------- STOCK --------
@@ -116,11 +109,12 @@ async function fetchStock(sym){
   return {sym,price,ema50,sma50w,sma200w};
 }
 
-// -------- FILTER --------
+// -------- FILTER (TradingView-like) --------
 function pass(d){
 
   if(!d.price) return false;
 
+  // Slight tolerance like TradingView
   if(d.ema50 && d.price < d.ema50 * 0.97) return false;
 
   if(d.sma200w && d.price < d.sma200w * 0.90) return false;
@@ -153,12 +147,12 @@ async function startLoad(){
       console.log("⚠️ Skipped:", sym);
     }
 
-    await new Promise(r=>setTimeout(r,300)); // IMPORTANT (rate limit safety)
+    await new Promise(r=>setTimeout(r,200));
   }
 
   if(allData.length === 0){
     document.getElementById('status').innerText =
-      "❌ No data loaded (proxy blocked). Try refresh.";
+      "❌ No data loaded (check worker URL)";
     return;
   }
 
