@@ -2,13 +2,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Rishi Trend Screener (FINAL WORKING)</title>
-
+<title>Rishi Screener FINAL (Working)</title>
 <style>
-body{background:#0f1117;color:#e8eaf0;font-family:sans-serif;padding:20px}
-button{padding:10px 20px;background:#22c55e;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
-table{width:100%;margin-top:20px;border-collapse:collapse}
-td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
+body{background:#0f1117;color:#fff;font-family:sans-serif;padding:20px}
+button{padding:10px;background:#22c55e;border:none;border-radius:6px}
 .pass{color:#22c55e}
 .fail{color:#ef4444}
 </style>
@@ -16,18 +13,15 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 
 <body>
 
-<h2>📈 Rishi Trend Screener (FINAL WORKING)</h2>
+<h2>📈 Rishi Screener (FINAL STABLE)</h2>
 <button onclick="startLoad()">Load Data</button>
-<div id="status" style="margin-top:10px;color:#aaa"></div>
+<div id="status"></div>
 
 <table id="tbl" style="display:none">
 <thead>
 <tr>
 <th>Symbol</th>
 <th>Price</th>
-<th>EMA 50D</th>
-<th>SMA 50W</th>
-<th>SMA 200W</th>
 <th>Status</th>
 </tr>
 </thead>
@@ -36,144 +30,57 @@ td,th{padding:10px;border-bottom:1px solid #333;text-align:left}
 
 <script>
 
+const WORKER = "https://polished-truth-5188.photos-kohli-2021.workers.dev/";
 const UNIVERSE = ['AVGO','COST','WMT','JPM'];
 
-let allData=[];
-
-// -------- EMA --------
-function calcEMA(arr,p){
-  if(arr.length<p) return null;
-  const k=2/(p+1);
-  let ema=arr.slice(0,p).reduce((a,b)=>a+b,0)/p;
-  for(let i=p;i<arr.length;i++){
-    ema=arr[i]*k + ema*(1-k);
-  }
-  return ema;
-}
-
-// -------- SMA --------
 function calcSMA(arr,p){
   if(arr.length<p) return null;
   return arr.slice(-p).reduce((a,b)=>a+b,0)/p;
 }
 
-// -------- CSV --------
-function parseCSV(text){
-  const lines=text.trim().split('\n');
-  const out=[];
-  for(let i=1;i<lines.length;i++){
-    const c=lines[i].split(',');
-    if(c.length>=5){
-      out.push(+c[4]);
-    }
-  }
-  return out.reverse();
-}
-
-// -------- FETCH (WORKING SOURCE) --------
-async function fetchData(sym,freq){
-
-  const url = `https://textise.net/showtext.aspx?strURL=https://stooq.com/q/d/l/?s=${sym.toLowerCase()}.us&i=${freq}`;
-
-  try{
-    const res = await fetch(url);
-    const txt = await res.text();
-
-    if(!txt || txt.length < 50) return null;
-
-    return parseCSV(txt);
-
-  }catch(e){
-    console.log("Error:", sym);
-    return null;
-  }
-}
-
-// -------- STOCK --------
 async function fetchStock(sym){
 
-  const weekly = await fetchData(sym,'w');
-  if(!weekly) return null;
+  const res = await fetch(`${WORKER}?symbol=${sym}`);
+  const data = await res.json();
 
-  const daily = await fetchData(sym,'d');
+  if(!data.historical) return null;
 
-  const price = weekly[weekly.length-1];
+  const prices = data.historical.map(d=>d.close).reverse();
 
-  const ema50 = daily ? calcEMA(daily,50) : null;
-  const sma50w = calcSMA(weekly,50);
-  const sma200w = calcSMA(weekly,200);
+  const price = prices[prices.length-1];
+  const sma200 = calcSMA(prices,200);
 
-  return {sym,price,ema50,sma50w,sma200w};
+  return {sym,price,sma200};
 }
 
-// -------- FILTER --------
 function pass(d){
-
-  if(!d.price) return false;
-
-  if(d.ema50 && d.price < d.ema50 * 0.97) return false;
-
-  if(d.sma200w && d.price < d.sma200w * 0.90) return false;
-
-  if(d.sma50w && d.sma200w && d.sma50w < d.sma200w * 0.90)
-    return false;
-
-  return true;
+  return d.price > d.sma200 * 0.9;
 }
 
-// -------- LOAD --------
 async function startLoad(){
 
-  document.getElementById('body').innerHTML="";
-  document.getElementById('tbl').style.display="none";
-  allData=[];
+  let out="";
 
-  for(let i=0;i<UNIVERSE.length;i++){
+  for(const sym of UNIVERSE){
 
-    const sym = UNIVERSE[i];
-
-    document.getElementById('status').innerText =
-      `Loading ${i+1}/${UNIVERSE.length} : ${sym}`;
+    document.getElementById("status").innerText = "Loading " + sym;
 
     const d = await fetchStock(sym);
 
-    if(d){
-      allData.push(d);
-    }
+    if(!d) continue;
 
-    await new Promise(r=>setTimeout(r,200));
-  }
-
-  if(allData.length === 0){
-    document.getElementById('status').innerText =
-      "❌ No data loaded (network blocked)";
-    return;
-  }
-
-  render();
-
-  document.getElementById('status').innerText =
-    `✅ Loaded ${allData.length} stocks`;
-}
-
-// -------- RENDER --------
-function render(){
-
-  const rows = allData.map(d=>{
     const ok = pass(d);
 
-    return `<tr>
-      <td>${d.sym}</td>
-      <td>${d.price?.toFixed(2)}</td>
-      <td>${d.ema50?.toFixed(2) || '-'}</td>
-      <td>${d.sma50w?.toFixed(2) || '-'}</td>
-      <td>${d.sma200w?.toFixed(2) || '-'}</td>
+    out += `<tr>
+      <td>${sym}</td>
+      <td>${d.price.toFixed(2)}</td>
       <td class="${ok?'pass':'fail'}">${ok?'PASS':'FAIL'}</td>
     </tr>`;
-  }).join('');
+  }
 
-  document.getElementById('body').innerHTML = rows;
-  document.getElementById('tbl').style.display="table";
+  document.getElementById("body").innerHTML = out;
+  document.getElementById("tbl").style.display="table";
+  document.getElementById("status").innerText = "✅ Done";
 }
 
 </script>
